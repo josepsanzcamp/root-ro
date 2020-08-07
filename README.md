@@ -13,8 +13,8 @@ Setup
 To use this code, you can execute the follow commands:
 
 ```
-cd /home/pi
-sudo bash
+sudo su
+cd ~
 
 echo Installing all dependencies
 apt-get install git rsync gawk busybox bindfs
