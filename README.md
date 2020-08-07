@@ -67,13 +67,13 @@ If you plan on doing greater changes (like `apt install`), it's probably the bes
 Reboot from read-only to read-write:
 ```
 sudo mount -o remount,rw /mnt/boot-ro
-sed -i "s/^\(i\)\(nitramfs[[:blank:]]*initrd.gz\)[[:blank:]]*$/#\1\2/" /mnt/boot-ro/config.txt
+sed -i "s/^\(i\)\(nitramfs [[:blank:]]*initrd.gz\)[[:blank:]]*$/#\1\2/" /mnt/boot-ro/config.txt
 reboot
 ```
 
 Reboot back into read-only:
 ```
-sed -i "s/^#[[:blank:]]*\(initramfs[[:blank:]]*initrd.gz\)[[:blank:]]*$/\1/" /boot/config.txt
+sed -i "s/^#[[:blank:]]*\(initramfs [[:blank:]]*initrd.gz\)[[:blank:]]*$/\1/" /boot/config.txt
 reboot
 ```
 
