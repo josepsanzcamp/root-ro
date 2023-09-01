@@ -80,3 +80,47 @@ sudo mount -o remount,ro /mnt/root-ro
 Original state
 ==============
 To return to the original state to allow easy apt-get update/upgrade and rpi-update, you need to add a comment mark to the "initramfs initrd.gz" line to the /boot/config.txt file.
+
+Use with Docker
+===============
+
+Docker uses overlay2 internally, this is not compatible with root-ro in default configuration. The easiest to fix this is probably using a different storage-driver such as _fuse-overlayfs_. This might have [significant performance issues][fuse-overlayfs-performance] though:  
+
+```
+sudo reboot-rw
+
+apt update
+apt install fuse-overlayfs
+```
+
+Edit `/etc/docker/daemon.json`:
+
+```json
+{
+  "storage-driver": "fuse-overlayfs"
+}
+```
+
+```
+systemctl restart docker
+reboot-ro
+```
+
+Test with:
+
+```
+reboot-rw
+docker run -dt --name echo --restart always alpine sh -c 'while sleep 10; do date; done'
+docker logs --tail 100 -f echo
+reboot-ro
+docker logs --tail 100 -f echo
+reboot
+docker logs --tail 100 -f echo
+```
+
+If setup correctly you should see some lines that were added when the container was in rw mode, and some new lines that were added in ro mode. The ro lines will be reset by every reboot.
+
+[overlay2-error]: https://stackoverflow.com/a/67954081/1997890
+[docker-paths]: https://www.freecodecamp.org/news/where-are-docker-images-stored-docker-container-paths-explained/
+[docs-overlayfs-driver]: https://docs.docker.com/storage/storagedriver/overlayfs-driver/
+[fuse-overlayfs-performance]: https://news.ycombinator.com/item?id=26102070
