@@ -1,0 +1,13 @@
+#!/usr/bin/env -S bash -e
+
+if [[ $(/usr/bin/id -u) -ne 0 ]]; then
+    echo "Must be run as root (or with sudo)"
+    exit 1
+fi
+
+systemctl stop systemd-random-seed.service
+rm /var/lib/systemd/random-seed
+rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*
+sed -i "s/^[[:blank:]]*#[[:blank:]]*\(initramfs [[:blank:]]*initrd.gz\)[[:blank:]]*$/\1/" /boot/config.txt
+
+reboot
