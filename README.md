@@ -29,7 +29,7 @@ echo Cloning repository
 git clone https://github.com/josepsanzcamp/root-ro.git
 
 echo Doing the setup
-rsync -va root-ro/etc/initramfs-tools/* /etc/initramfs-tools/
+rsync -va root-ro/rootfs/ /
 mkinitramfs -o /boot/initrd.gz
 echo initramfs initrd.gz >> /boot/config.txt
 
