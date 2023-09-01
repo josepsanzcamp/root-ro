@@ -29,9 +29,9 @@ echo Cloning repository
 git clone https://github.com/josepsanzcamp/root-ro.git
 
 echo Doing the setup
-rsync -va root-ro/etc/initramfs-tools/* /etc/initramfs-tools/
+rsync -va root-ro/rootfs/ /
 mkinitramfs -o /boot/initrd.gz
-echo initramfs initrd.gz >> /boot/config.txt
+echo -e "\n# root-ro\ninitramfs initrd.gz" >> /boot/config.txt
 
 echo Restarting RPI
 reboot
@@ -62,20 +62,10 @@ sudo mount -o remount,ro /mnt/boot-ro
 
 ## Reboot the Pi with read-write enabled
 
-If you plan on doing greater changes (like `apt install`), it's probably the best choice to reboot the Pi with read-write enabled, do your changes and boot back into read-only again. Basically all you have to do is to add a comment mark to the "initramfs initrd.gz" line to the /boot/config.txt file.
+If you plan on doing greater changes (like `apt install`), it's probably the best choice to reboot the Pi with read-write enabled, do your changes and boot back into read-only again. Basically all you have to do is to add a comment mark to the "initramfs initrd.gz" line to the /boot/config.txt file. There are convenience scripts that will do this for you: 
 
-Reboot from read-only to read-write:
-```
-sudo mount -o remount,rw /mnt/boot-ro
-sed -i "s/^\(i\)\(nitramfs [[:blank:]]*initrd.gz\)[[:blank:]]*$/#\1\2/" /mnt/boot-ro/config.txt
-reboot
-```
-
-Reboot back into read-only:
-```
-sed -i "s/^#[[:blank:]]*\(initramfs [[:blank:]]*initrd.gz\)[[:blank:]]*$/\1/" /boot/config.txt
-reboot
-```
+- `sudo reboot-ro`
+- `sudo reboot-rw`
 
 ## Sync changes from upper into lower directory
 
@@ -90,3 +80,47 @@ sudo mount -o remount,ro /mnt/root-ro
 Original state
 ==============
 To return to the original state to allow easy apt-get update/upgrade and rpi-update, you need to add a comment mark to the "initramfs initrd.gz" line to the /boot/config.txt file.
+
+Use with Docker
+===============
+
+Docker uses overlay2 internally, this is not compatible with root-ro in default configuration. The easiest to fix this is probably using a different storage-driver such as _fuse-overlayfs_. This might have [significant performance issues][fuse-overlayfs-performance] though:  
+
+```
+sudo reboot-rw
+
+apt update
+apt install fuse-overlayfs
+```
+
+Edit `/etc/docker/daemon.json`:
+
+```json
+{
+  "storage-driver": "fuse-overlayfs"
+}
+```
+
+```
+systemctl restart docker
+reboot-ro
+```
+
+Test with:
+
+```
+reboot-rw
+docker run -dt --name echo --restart always alpine sh -c 'while sleep 10; do date; done'
+docker logs --tail 100 -f echo
+reboot-ro
+docker logs --tail 100 -f echo
+reboot
+docker logs --tail 100 -f echo
+```
+
+If setup correctly you should see some lines that were added when the container was in rw mode, and some new lines that were added in ro mode. The ro lines will be reset by every reboot.
+
+[overlay2-error]: https://stackoverflow.com/a/67954081/1997890
+[docker-paths]: https://www.freecodecamp.org/news/where-are-docker-images-stored-docker-container-paths-explained/
+[docs-overlayfs-driver]: https://docs.docker.com/storage/storagedriver/overlayfs-driver/
+[fuse-overlayfs-performance]: https://news.ycombinator.com/item?id=26102070

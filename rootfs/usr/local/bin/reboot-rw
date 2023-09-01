@@ -1,0 +1,11 @@
+#!/usr/bin/env -S bash -e
+
+if [[ $(/usr/bin/id -u) -ne 0 ]]; then
+    echo "Must be run as root (or with sudo)"
+    exit 1
+fi
+
+mount -o remount,rw /mnt/boot-ro
+sed -i "s/^[[:blank:]]*\(initramfs [[:blank:]]*initrd.gz\)[[:blank:]]*$/#\1/" /mnt/boot-ro/config.txt
+
+reboot
